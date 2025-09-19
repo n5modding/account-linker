@@ -18,7 +18,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 linked_accounts_file = "linked_accounts.json"
 CONFIG_FILE = "config.json"
-ADMIN_ROLE_NAME = "🔨Mod"
+ADMIN_ROLE_NAME = "Admin"
 SUPPORTER_ROLE_NAME = "Supporter"
 OWNER_ID = 1322627642746339432
 BACKEND_URL = "https://backend-2-0-9uod.onrender.com/redeem"  # Replace with your actual endpoint
@@ -423,3 +423,4 @@ async def main():
 if __name__ == "__main__":
     load_dotenv()
     asyncio.run(main())
+
