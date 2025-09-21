@@ -325,61 +325,6 @@ async def admin_unlink(interaction: discord.Interaction, discord_user: discord.U
         await interaction.response.send_message("❌ User is not linked.", ephemeral=True)
 
 
-# ------------------- Code Generation & Redemption -------------------
-
-@bot.tree.command(name="generate-code", description="Generate a 1-time redeemable code (Supporters only).")
-async def generate_code(interaction: discord.Interaction):
-    discord_id = str(interaction.user.id)
-    now = datetime.utcnow()
-
-    if not has_supporter_role(interaction.user):
-        await interaction.response.send_message("❌ You need the Supporter role to generate a code.", ephemeral=True)
-        return
-
-    last_generated = linked_accounts["generated_codes"].get(discord_id, {}).get("last_generated")
-    if last_generated:
-        last_generated_dt = datetime.fromisoformat(last_generated)
-        if now - last_generated_dt < timedelta(days=1):
-            await interaction.response.send_message("❌ You can only generate 1 code per day.", ephemeral=True)
-            return
-
-    code = secrets.token_urlsafe(6).upper()
-    linked_accounts["generated_codes"][discord_id] = {
-        "code": code,
-        "expires": (now + timedelta(minutes=10)).isoformat(),
-        "last_generated": now.isoformat()
-    }
-    save_linked_accounts()
-
-    await interaction.response.send_message(f"✅ Your code: `{code}` (expires in 10 minutes)", ephemeral=True)
-
-
-@bot.tree.command(name="redeem-code", description="Redeem a code from the website.")
-async def redeem_code(interaction: discord.Interaction, code: str):
-    discord_id = str(interaction.user.id)
-    now = datetime.utcnow()
-    found = None
-
-    for user_id, data in linked_accounts["generated_codes"].items():
-        if data.get("code") == code:
-            expires = datetime.fromisoformat(data["expires"])
-            if now > expires:
-                await interaction.response.send_message("❌ This code has expired.", ephemeral=True)
-                return
-            found = user_id
-            break
-
-    if not found:
-        await interaction.response.send_message("❌ Invalid code.", ephemeral=True)
-        return
-
-    linked_accounts["generated_codes"][found]["redeemed_by"] = discord_id
-    linked_accounts["generated_codes"][found]["cookie_expires"] = (now + timedelta(days=2)).isoformat()
-    save_linked_accounts()
-
-    await interaction.response.send_message("✅ Code redeemed! Your session will last 2 days.", ephemeral=True)
-
-
 # ------------------- Helper Functions -------------------
 
 async def remove_gamepass_roles(member: discord.Member):
@@ -423,4 +368,3 @@ async def main():
 if __name__ == "__main__":
     load_dotenv()
     asyncio.run(main())
-
